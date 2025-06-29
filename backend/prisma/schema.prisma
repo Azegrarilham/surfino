@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT) //using Enum for roles
+  firstName    String? //?= Nullable
+  lastName     String?
+  phoneNumber  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isVerified   Boolean  @default(false)
+
+  instructorProfile InstructorProfile? // One-to-one relation with InstructorProfile
+  bookings          Booking[]          @relation("StudentBookings") // One-to-many relation with Booking (as a student)
+  reviewsWriten     Review[]           // reviws by students
+}
+
+model InstructorProfile {
+  id                 String                       @id @default(uuid())
+  userId             String                       @unique // Foreign key to User
+  user               User                         @relation(fields: [userId], references: [id]) // Relation to User
+  birthDate          DateTime?
+  country            String?
+  city               String?
+  zipCode            String?
+  beachLocation      String? // Primary surf spot
+  certification      String? // Optional certification details
+  languages          String[] // Array of strings for languages
+  bio                String?
+  portraitPictureUrl String? // URL to image
+  portfolioImageUrls String[]                     @default([]) // Array of strings for portfolio images
+  levelToTeach       String? // e.g., "Beginner", "Intermediate", "Advanced"
+  verificationStatus InstructorVerificationStatus @default(PENDING) // for admin verification
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  averageRating      Float        @default(0.0) // Store the calculated average rating
+  totalReviews       Int          @default(0)   // Store the total count of reviews
+
+  availabilities Availability[] // Instructor has many availabilities
+  bookings       Booking[]      @relation("InstructorBookings") // Instructor can be associated with many bookings
+  reviewsReceived    Review[]    //the reviews Received
+}
+
+model Availability {
+  id           String            @id @default(uuid())
+  instructorId String // Foreign key to InstructorProfile
+  instructor   InstructorProfile @relation(fields: [instructorId], references: [id])
+
+  startTime       DateTime
+  endTime         DateTime
+  isBooked        Boolean  @default(false)
+  price           Decimal // Nullable, if price can vary by slot
+  durationMinutes Int? // Nullable, if duration can vary by slot
+  isRecurring     Boolean? //for week slots
+  dayOfWeek       Int? //0-6 for recurring slots
+
+  // A single availability slot can have one booking in our MVP
+
+  bookingId String?  @unique // Need a unique foreign key for a 1-to-1 or 1-to-0..1 relationship from Availability to Booking
+  booking   Booking? @relation
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Booking {
+  id        String @id @default(uuid())
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], name: "StudentBookings")
+
+  instructorId String
+  instructor   InstructorProfile @relation(fields: [instructorId], references: [id], name: "InstructorBookings")
+
+  availabilityId String       @unique // Foreign key to Availability - one booking per availability slot (for MVP)
+  availability   Availability @relation(fields: [availabilityId], references: [id])
+
+  bookedPrice           Decimal // The price confirmed at the time of booking
+  bookedDurationMinutes Int? // The duration confirmed at the time of booking
+  bookingType           BookingType @default(INDIVIDUAL) // Enum: individual, group
+  numberOfStudents      Int         @default(1) // Default to 1 for individual, for group bookings
+
+  status            BookingStatus @default(PENDING) // Enum: pending, confirmed, cancelled, completed
+  location          String
+  equipmentIncluded Boolean       @default(false)
+  studentNotes      String?
+
+  cancellationReason String?
+  cancellationTime   DateTime?
+  // For simplified MVP payment - we'll only link to a basic payment record
+  payment            Payment? // One-to-one relation with Payment (optional)
+
+  review             Review?
+  reviewId           String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id        String  @id @default(uuid())
+  bookingId String  @unique // Foreign key to Booking (1-to-1)
+  booking   Booking @relation(fields: [bookingId], references: [id])
+
+  amount          Decimal
+  status          PaymentStatus @default(PENDING) // Enum: pending, completed, failed
+  transactionDate DateTime      @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review{
+  id          String    @id @default(uuid())
+  student     User      @relation(fields: [studentId], references: [id])
+  studentId   String
+  instructor  InstructorProfile  @relation(fields: [instructorId], references: [id])
+  instructorId String
+  booking      Booking      @relation(fields: [bookingId], references: [id])
+  bookingId    String       @unique  // A booking can only have one review
+
+  rating       Int        //1-5 starts
+  comment      String?    @db.Text  //optional text review
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+//for booking type
+enum BookingType {
+  INDIVIDUAL
+  GROUP
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  REFUNDED // For future, but good to have in mind
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED // For future
+}
+
+enum InstructorVerificationStatus {
+  PENDING // Waiting for instructor to complete profile / admin review
+  IN_REVIEW // Admin is actively reviewing
+  VERIFIED // Approved by admin
+  REJECTED // Rejected by admin
+  NEEDS_INFO // Admin needs more info from instructor
+}
+
+// Define the Role Enum
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
