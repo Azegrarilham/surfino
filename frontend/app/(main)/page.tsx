@@ -1,7 +1,8 @@
 'use client'
+import FAQ from '@/components/faq/faq'
 import Footer from '@/components/footer/footer'
 import Hero from '@/components/home/hero'
-import FancyMultiSelect from '@/components/home/tx'
+import Instructors from '@/components/instructors/instructors'
 import React from 'react'
 
 
@@ -11,6 +12,8 @@ export default function home() {
   return (
     <>
       <Hero/>
+      <Instructors/>
+      <FAQ/>
       <Footer/>
     </>
   )

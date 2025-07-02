@@ -21,13 +21,13 @@ const Hero = () => {
             backgroundImage: "url('https://images.pexels.com/photos/390051/surfer-wave-sunset-the-indian-ocean-390051.jpeg')"
         }}>
             <div className="text-center max-w-2xl pt-10">
-                <Badge className="bg-gradient-to-br via-70% from-primary via-muted/30 to-primary rounded-full py-1 border-none">
+                <Badge className="bg-gradient-to-br via-70% from-primary via-muted/30 to-primary rounded-full py-1 border-none text-black drop-shadow-lg">
                     Just released v1.0.0
                 </Badge>
-                <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl md:leading-[1.2] font-bold text-white">
-                    Surfino
+                <h1 className="mt-6 text-4xl sm:text-4xl md:text-5xl md:leading-[1.2] font-bold text-white" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+                    Morocco’s easiest way to book a surf lesson.
                 </h1>
-                <p className="mt-6 text-[17px] md:text-lg text-white">
+                <p className="mt-6 text-[17px] md:text-xl text-white">
                     Where Atlantic Waves Meet Amazigh Heritage
                 </p>
                 <div className="mt-12 flex items-center justify-center gap-4">

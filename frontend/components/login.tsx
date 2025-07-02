@@ -1,25 +1,50 @@
+'use client'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useState } from "react"
+import { useAuthStore } from "@/src/store/authStore"
+import { useRouter } from "next/navigation"
 
 export function LoginForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    const { login, isLoading, error } = useAuthStore()
+    const router = useRouter()
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        await login(email, password)
+        const { isAuthenticated, user } = useAuthStore.getState()
+
+        if (isAuthenticated && user) {
+            // Redirect to landing page for students
+            router.push("/")
+        }
+    }
+
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <Card className="overflow-hidden p-0">
                 <CardContent className="grid p-0 md:grid-cols-2">
-                    <form className="p-6 md:p-8">
+                    <form className="p-6 md:p-8" onSubmit={handleSubmit}>
                         <div className="flex flex-col gap-6">
                             <div className="flex flex-col items-center text-center">
                                 <h1 className="text-2xl font-bold">Welcome back</h1>
                                 <p className="text-muted-foreground text-balance">
-                                    Login to your Acme Inc account
+                                    Login to your account
                                 </p>
                             </div>
+                            {error && (
+                                <div className="p-3 bg-red-100 text-red-800 rounded-md">
+                                    {error}
+                                </div>
+                            )}
                             <div className="grid gap-3">
                                 <Label htmlFor="email">Email</Label>
                                 <Input
@@ -27,6 +52,8 @@ export function LoginForm({
                                     type="email"
                                     placeholder="m@example.com"
                                     required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                 />
                             </div>
                             <div className="grid gap-3">
@@ -39,10 +66,16 @@ export function LoginForm({
                                         Forgot your password?
                                     </a>
                                 </div>
-                                <Input id="password" type="password" required />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
                             </div>
-                            <Button type="submit" className="w-full">
-                                Login
+                            <Button type="submit" className="w-full" disabled={isLoading}>
+                                {isLoading ? "Logging in..." : "Login"}
                             </Button>
                             <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
                                 <span className="bg-card text-muted-foreground relative z-10 px-2">
@@ -88,7 +121,7 @@ export function LoginForm({
                     </form>
                     <div className="bg-muted relative hidden md:block">
                         <img
-                            src="/placeholder.svg"
+                            src="https://images.pexels.com/photos/2869354/pexels-photo-2869354.jpeg"
                             alt="Image"
                             className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
                         />
